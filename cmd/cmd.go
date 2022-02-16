@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"github.com/dkharms/json-rpc/pkg/procedure"
 	"github.com/dkharms/json-rpc/pkg/server"
+	"log"
+	"os"
 )
 
 type SumRequest struct {
@@ -16,18 +17,21 @@ type SumResponse struct {
 }
 
 func main() {
-	s := server.New(nil)
+	l := log.New(os.Stdin, "server: ", log.Ldate|log.Lshortfile)
+	s := server.New(l)
 	s.AddProcedure(procedure.New("GetSum", "@1",
-		func(request *server.JsonRequest, response *server.JsonResponse) {
+		func(request *server.JsonRequest, response *server.JsonResponse) error {
 			sr := &SumRequest{}
 			err := request.Get(sr)
+
 			if err != nil {
-				return
+				return err
 			}
 
 			res := SumResponse{Result: sr.A + sr.B}
 			response.Set(res)
-			fmt.Println(request, response)
+
+			return nil
 		}))
 	s.Run(":8080")
 }

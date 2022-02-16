@@ -2,7 +2,7 @@ package procedure
 
 import "github.com/dkharms/json-rpc/pkg/server"
 
-type Implementation func(*server.JsonRequest, *server.JsonResponse)
+type Implementation func(*server.JsonRequest, *server.JsonResponse) error
 
 type Procedure struct {
 	Name    string
