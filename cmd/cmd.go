@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/dkharms/json-rpc/pkg/api"
 	"github.com/dkharms/json-rpc/pkg/procedure"
 	"github.com/dkharms/json-rpc/pkg/server"
 	"log"
@@ -20,10 +21,10 @@ func main() {
 	l := log.New(os.Stdin, "server: ", log.Ldate|log.Lshortfile)
 	s := server.New(l)
 	s.AddProcedure(procedure.New("GetSum", "@1",
-		func(request *server.JsonRequest, response *server.JsonResponse) error {
+		func(request *api.JsonRequest, response *api.JsonResponse) error {
 			sr := &SumRequest{}
-			err := request.Get(sr)
 
+			err := request.Get(sr)
 			if err != nil {
 				return err
 			}

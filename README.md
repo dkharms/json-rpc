@@ -6,9 +6,9 @@ This is simple json-rpc framework for communicating among microservices. It was 
 
 ## 🎓 Usage
 
-This framework is simple to learn because of it's nature
+This framework is simple to learn because of it's nature.
 
-### 1⃣ Creating server
+### ⚡ Creating server
 
 DI for loggers:
 
@@ -17,41 +17,43 @@ l := log.New(os.Stdin, "server: ", log.Ldate|log.Lshortfile)
 s := server.New(l)
 ```
 
-### 2⃣ Creating items
+### ⚡ Creating items
 
 ```go
 type SumRequest struct {
-    A int `json:"a"`
-    B int `json:"b"`
+A int `json:"a"`
+B int `json:"b"`
 }
 
 type SumResponse struct {
-    Result int `json:"result"`
+Result int `json:"result"`
 }
 ```
 
-### 3⃣ Creating procedures
+### ⚡ Creating procedures
 
 Adding procedure for remote calling is very simple:
 
 ```go
 s.AddProcedure(procedure.New("GetSum", "@1",
-    func(request *server.JsonRequest, response *server.JsonResponse) error {
-        sr := &SumRequest{}
-        err := request.Get(sr)
-        
-        if err != nil {
-            return err
+        func (request *api.JsonRequest, response *api.JsonResponse) error {
+            sr := &SumRequest{}
+            
+            err := request.Get(sr)
+            if err != nil {
+                return err
+            }
+            
+            res := SumResponse{Result: sr.A + sr.B}
+            response.Set(res)
+            
+            return nil
         }
-        
-        res := SumResponse{Result: sr.A + sr.B}
-        response.Set(res)
-        
-        return nil
-    }))
+	)
+)
 ```
 
-### 4⃣ Running server
+### ⚡ Running server
 
 ```go
 s.Run(":8080")
