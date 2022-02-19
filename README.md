@@ -21,12 +21,12 @@ s := server.New(l)
 
 ```go
 type SumRequest struct {
-A int `json:"a"`
-B int `json:"b"`
+A int `json-rpc:"a"`
+B int `json-rpc:"b"`
 }
 
 type SumResponse struct {
-Result int `json:"result"`
+Result int `json-rpc:"result"`
 }
 ```
 

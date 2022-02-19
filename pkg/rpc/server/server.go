@@ -4,23 +4,28 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dkharms/json-rpc/pkg/api"
-	"github.com/dkharms/json-rpc/pkg/procedure"
 	"io"
 	"log"
 	"net/http"
+	"os"
 )
 
-type Server struct {
+type server struct {
 	l *log.Logger
-	p map[procedure.Name]*procedure.Map
+	p map[api.ProcedureName]*api.ProcedureMap
 }
 
-func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+var defaultServer = server{
+	l: log.New(os.Stdout, "server ", log.Ldate|log.Lshortfile),
+	p: map[api.ProcedureName]*api.ProcedureMap{},
+}
+
+func (s *server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	defer request.Body.Close()
 
 	s.l.Printf("[%s] new connection from %s\n", request.Method, request.RemoteAddr)
-	path := procedure.Name(request.URL.Path[1:])
-	version := procedure.Version(request.URL.Query().Get("version"))
+	path := api.ProcedureName(request.URL.Path[1:])
+	version := api.ProcedureVersion(request.URL.Query().Get("version"))
 	s.l.Printf("[%s] calling %s with version %s", request.RemoteAddr, path, version)
 
 	jRequest, jResponse := &api.JsonRequest{}, &api.JsonResponse{Data: map[string]interface{}{}}
@@ -49,28 +54,37 @@ func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	err = procedureImpl.Impl(jRequest, jResponse)
+	jResponse.Id = jRequest.Id
+	err = procedureImpl.Handler(jRequest, jResponse)
 	if err != nil {
 		jResponse.Err = fmt.Sprintf("error [%s] appeared while executing %s", err, path)
 		return
 	}
 }
 
-func New(l *log.Logger) *Server {
-	return &Server{l: l, p: map[procedure.Name]*procedure.Map{}}
+func New(l *log.Logger) *server {
+	return &server{l: l, p: map[api.ProcedureName]*api.ProcedureMap{}}
 }
 
-func (s *Server) AddProcedure(userProcedure procedure.Procedure) {
-	_, ok := s.p[userProcedure.Name]
+func AddProcedure(userProcedure api.Procedure) {
+	defaultServer.AddProcedure(userProcedure)
+}
+
+func (s *server) AddProcedure(userProcedure api.Procedure) {
+	p, ok := s.p[userProcedure.Name]
 
 	if !ok {
-		s.p[userProcedure.Name] = &procedure.Map{}
+		p = &api.ProcedureMap{}
+		s.p[userProcedure.Name] = p
 	}
 
-	p := s.p[userProcedure.Name]
 	p.Add(userProcedure)
 }
 
-func (s *Server) Run(addr string) error {
+func Run(addr string) error {
+	return defaultServer.Run(addr)
+}
+
+func (s *server) Run(addr string) error {
 	return http.ListenAndServe(addr, s)
 }
