@@ -11,22 +11,22 @@ import (
 )
 
 type server struct {
-	l *log.Logger
-	p map[api.ProcedureName]*api.ProcedureMap
+	logger     *log.Logger
+	procedures map[api.ProcedureName]*api.ProcedureMap
 }
 
 var defaultServer = server{
-	l: log.New(os.Stdout, "server ", log.Ldate|log.Lshortfile),
-	p: map[api.ProcedureName]*api.ProcedureMap{},
+	logger:     log.New(os.Stdout, "server ", log.Ldate|log.Lshortfile),
+	procedures: map[api.ProcedureName]*api.ProcedureMap{},
 }
 
 func (s *server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	defer request.Body.Close()
 
-	s.l.Printf("[%s] new connection from %s\n", request.Method, request.RemoteAddr)
+	s.logger.Printf("[%s] new connection from %s\n", request.Method, request.RemoteAddr)
 	path := api.ProcedureName(request.URL.Path[1:])
 	version := api.ProcedureVersion(request.URL.Query().Get("version"))
-	s.l.Printf("[%s] calling %s with version %s", request.RemoteAddr, path, version)
+	s.logger.Printf("[%s] calling %s with version %s", request.RemoteAddr, path, version)
 
 	jRequest, jResponse := &api.JsonRequest{}, &api.JsonResponse{Data: map[string]interface{}{}}
 	defer func() {
@@ -35,7 +35,7 @@ func (s *server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		writer.Write(data)
 	}()
 
-	procedureMap, ok := s.p[path]
+	procedureMap, ok := s.procedures[path]
 	if !ok {
 		jResponse.Err = fmt.Sprintf("procedure %s wasn't found", path)
 		return
@@ -63,7 +63,7 @@ func (s *server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 }
 
 func New(l *log.Logger) *server {
-	return &server{l: l, p: map[api.ProcedureName]*api.ProcedureMap{}}
+	return &server{logger: l, procedures: map[api.ProcedureName]*api.ProcedureMap{}}
 }
 
 func AddProcedure(userProcedure api.Procedure) {
@@ -71,11 +71,11 @@ func AddProcedure(userProcedure api.Procedure) {
 }
 
 func (s *server) AddProcedure(userProcedure api.Procedure) {
-	p, ok := s.p[userProcedure.Name]
+	p, ok := s.procedures[userProcedure.Name]
 
 	if !ok {
 		p = &api.ProcedureMap{}
-		s.p[userProcedure.Name] = p
+		s.procedures[userProcedure.Name] = p
 	}
 
 	p.Add(userProcedure)

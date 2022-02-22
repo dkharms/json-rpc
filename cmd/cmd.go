@@ -15,7 +15,9 @@ type SumResponse struct {
 }
 
 func RunServer() {
-	server.AddProcedure(api.Procedure{Name: "GetSum", Version: "@1",
+	server.AddProcedure(api.Procedure{
+		Name:    "GetSum",
+		Version: "@1",
 		Handler: func(request *api.JsonRequest, response *api.JsonResponse) error {
 			sr := &SumRequest{}
 
@@ -28,7 +30,7 @@ func RunServer() {
 			response.Set(res)
 			return nil
 		}})
-	server.Run("192.168.88.20:8080")
+	server.Run(":8080")
 }
 
 func main() {
